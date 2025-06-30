@@ -5,13 +5,19 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
   <title>Webcam Mood Tracker</title>
   <link rel="stylesheet" href="styles.css"/>
-  <!-- ✅ Correct browser CDN -->
   <script defer src="https://unpkg.com/face-api.js@0.22.2/dist/face-api.min.js"></script>
   <script defer src="script.js"></script>
 </head>
 <body>
   <h1>Webcam Mood Tracker</h1>
-  <video id="video" width="720" height="560" autoplay muted></video>
-  <div id="emoji"></div>
+  <div class="controls">
+    <button id="startBtn">Start Camera</button>
+    <button id="stopBtn">Stop Camera</button>
+  </div>
+  <video id="video" autoplay muted></video>
+  <div id="result">
+    <div id="emoji"></div>
+    <div id="emotionText"></div>
+  </div>
 </body>
 </html>
