@@ -5,15 +5,14 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
   <title>Webcam Mood Tracker</title>
   <link rel="stylesheet" href="styles.css"/>
+  <!-- Load face-api.js from CDN FIRST -->
   <script defer src="https://unpkg.com/face-api.js"></script>
+  <!-- Load your script AFTER face-api.js -->
   <script defer src="script.js"></script>
 </head>
 <body>
   <h1>Webcam Mood Tracker</h1>
-  <div id="video-container">
-    <video id="video" width="720" height="560" autoplay muted></video>
-    <div id="overlay"></div>
-  </div>
+  <video id="video" width="720" height="560" autoplay muted></video>
   <div id="emoji"></div>
 </body>
 </html>
