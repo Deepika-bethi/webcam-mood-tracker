@@ -1,9 +1,10 @@
-// Load the models before starting the video
+// Load the models
 async function loadModels() {
   await faceapi.nets.tinyFaceDetector.loadFromUri('./models/tiny_face_detector_model');
   await faceapi.nets.faceExpressionNet.loadFromUri('./models/face_expression_model');
 }
 
+// Start webcam video
 async function startVideo() {
   const video = document.getElementById('video');
   try {
@@ -14,6 +15,7 @@ async function startVideo() {
   }
 }
 
+// Convert expression to emoji
 function getEmoji(expression) {
   switch (expression) {
     case 'happy':
@@ -35,26 +37,24 @@ function getEmoji(expression) {
   }
 }
 
+// Main loop
 async function onPlay() {
   const video = document.getElementById('video');
   const emojiDiv = document.getElementById('emoji');
-
   const displaySize = { width: video.width, height: video.height };
   faceapi.matchDimensions(emojiDiv, displaySize);
 
   setInterval(async () => {
-    const detections = await faceapi.detectSingleFace(
-      video,
-      new faceapi.TinyFaceDetectorOptions()
-    ).withFaceExpressions();
+    const detections = await faceapi
+      .detectSingleFace(video, new faceapi.TinyFaceDetectorOptions())
+      .withFaceExpressions();
 
     if (detections) {
       const expressions = detections.expressions;
       const maxValue = Math.max(...Object.values(expressions));
       const dominantExpression = Object.keys(expressions).find(
-        item => expressions[item] === maxValue
+        (item) => expressions[item] === maxValue
       );
-
       emojiDiv.textContent = getEmoji(dominantExpression);
     } else {
       emojiDiv.textContent = '';
@@ -62,7 +62,7 @@ async function onPlay() {
   }, 500);
 }
 
-// Initialize
+// Initialize everything
 loadModels().then(() => {
   startVideo();
   document.getElementById('video').addEventListener('play', onPlay);
