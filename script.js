@@ -1,7 +1,19 @@
 let stream = null;
 let detectionInterval = null;
 let lastSpoken = '';
+let selectedVoice = null;
 
+// Load the voices and pick a female one
+function loadVoices() {
+  const voices = speechSynthesis.getVoices();
+  // Find the first female voice
+  selectedVoice = voices.find(v => v.name.toLowerCase().includes('female')) 
+                 || voices.find(v => v.name.toLowerCase().includes('woman')) 
+                 || voices.find(v => v.gender === 'female') 
+                 || voices[0]; // fallback to any voice
+}
+
+// Load the models
 async function loadModels() {
   await faceapi.nets.tinyFaceDetector.loadFromUri('./models/tiny_face_detector_model');
   await faceapi.nets.faceExpressionNet.loadFromUri('./models/face_expression_model');
@@ -31,6 +43,9 @@ function getEmoji(expression) {
 function speak(text) {
   if (text !== lastSpoken) {
     const utterance = new SpeechSynthesisUtterance(text);
+    if (selectedVoice) {
+      utterance.voice = selectedVoice;
+    }
     speechSynthesis.speak(utterance);
     lastSpoken = text;
   }
@@ -92,11 +107,18 @@ function stopVideo() {
   lastSpoken = '';
 }
 
+// Initialize
 document.getElementById('startBtn').addEventListener('click', async () => {
   await loadModels();
+  loadVoices();
   startVideo();
 });
 
 document.getElementById('stopBtn').addEventListener('click', () => {
   stopVideo();
 });
+
+// Some browsers load voices asynchronously
+if (speechSynthesis.onvoiceschanged !== undefined) {
+  speechSynthesis.onvoiceschanged = loadVoices;
+}
