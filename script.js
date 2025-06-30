@@ -1,21 +1,12 @@
-// Load the models
+let stream = null;
+let detectionInterval = null;
+let lastSpoken = '';
+
 async function loadModels() {
   await faceapi.nets.tinyFaceDetector.loadFromUri('./models/tiny_face_detector_model');
   await faceapi.nets.faceExpressionNet.loadFromUri('./models/face_expression_model');
 }
 
-// Start webcam video
-async function startVideo() {
-  const video = document.getElementById('video');
-  try {
-    const stream = await navigator.mediaDevices.getUserMedia({ video: {} });
-    video.srcObject = stream;
-  } catch (err) {
-    console.error('Error accessing webcam:', err);
-  }
-}
-
-// Convert expression to emoji
 function getEmoji(expression) {
   switch (expression) {
     case 'happy':
@@ -37,33 +28,75 @@ function getEmoji(expression) {
   }
 }
 
-// Main loop
-async function onPlay() {
-  const video = document.getElementById('video');
-  const emojiDiv = document.getElementById('emoji');
-  const displaySize = { width: video.width, height: video.height };
-  faceapi.matchDimensions(emojiDiv, displaySize);
-
-  setInterval(async () => {
-    const detections = await faceapi
-      .detectSingleFace(video, new faceapi.TinyFaceDetectorOptions())
-      .withFaceExpressions();
-
-    if (detections) {
-      const expressions = detections.expressions;
-      const maxValue = Math.max(...Object.values(expressions));
-      const dominantExpression = Object.keys(expressions).find(
-        (item) => expressions[item] === maxValue
-      );
-      emojiDiv.textContent = getEmoji(dominantExpression);
-    } else {
-      emojiDiv.textContent = '';
-    }
-  }, 500);
+function speak(text) {
+  if (text !== lastSpoken) {
+    const utterance = new SpeechSynthesisUtterance(text);
+    speechSynthesis.speak(utterance);
+    lastSpoken = text;
+  }
 }
 
-// Initialize everything
-loadModels().then(() => {
+async function startVideo() {
+  const video = document.getElementById('video');
+  try {
+    stream = await navigator.mediaDevices.getUserMedia({ video: {} });
+    video.srcObject = stream;
+
+    video.addEventListener('play', () => {
+      const emojiDiv = document.getElementById('emoji');
+      const emotionTextDiv = document.getElementById('emotionText');
+
+      detectionInterval = setInterval(async () => {
+        const detections = await faceapi
+          .detectSingleFace(video, new faceapi.TinyFaceDetectorOptions())
+          .withFaceExpressions();
+
+        if (detections) {
+          const expressions = detections.expressions;
+          const maxValue = Math.max(...Object.values(expressions));
+          const dominantExpression = Object.keys(expressions).find(
+            (e) => expressions[e] === maxValue
+          );
+
+          const emoji = getEmoji(dominantExpression);
+          emojiDiv.textContent = emoji;
+          emotionTextDiv.textContent = dominantExpression;
+
+          speak(`You look ${dominantExpression}`);
+        } else {
+          emojiDiv.textContent = '';
+          emotionTextDiv.textContent = '';
+        }
+      }, 1000);
+    });
+  } catch (err) {
+    console.error('Error accessing webcam:', err);
+  }
+}
+
+function stopVideo() {
+  if (stream) {
+    stream.getTracks().forEach((track) => track.stop());
+    stream = null;
+  }
+  const video = document.getElementById('video');
+  video.srcObject = null;
+
+  if (detectionInterval) {
+    clearInterval(detectionInterval);
+    detectionInterval = null;
+  }
+
+  document.getElementById('emoji').textContent = '';
+  document.getElementById('emotionText').textContent = '';
+  lastSpoken = '';
+}
+
+document.getElementById('startBtn').addEventListener('click', async () => {
+  await loadModels();
   startVideo();
-  document.getElementById('video').addEventListener('play', onPlay);
+});
+
+document.getElementById('stopBtn').addEventListener('click', () => {
+  stopVideo();
 });
